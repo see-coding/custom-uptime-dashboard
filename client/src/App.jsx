@@ -1,14 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { Cloud, Plus } from 'lucide-react';
+import { Cloud, Plus, Pencil, Save } from 'lucide-react';
 
-function DomainItem({ domain }) {
+function DomainItem({ domain, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(domain.name);
+
+  const save = async () => {
+    setEditing(false);
+    if (value !== domain.name) {
+      await onUpdate(domain.name, value);
+    }
+  };
+
   return (
     <div className="border rounded p-4 bg-white shadow-sm flex items-center justify-between">
-      <div>
-        <p className="font-semibold">{domain.name}</p>
-        <p className="text-sm text-gray-600">Status: {domain.status}</p>
-        <p className="text-sm text-gray-600">SSL bis: {domain.ssl} ({domain.daysLeft} Tage)</p>
+      <div className="flex-1">
+        {editing ? (
+          <input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="border px-2 py-1 rounded w-full"
+          />
+        ) : (
+          <>
+            <p className="font-semibold">{domain.name}</p>
+            <p className="text-sm text-gray-600">Status: {domain.status}</p>
+            <p className="text-sm text-gray-600">SSL bis: {domain.ssl} ({domain.daysLeft} Tage)</p>
+          </>
+        )}
       </div>
+      <button
+        className="ml-2 text-blue-500"
+        onClick={editing ? save : () => setEditing(true)}
+      >
+        {editing ? <Save size={16} /> : <Pencil size={16} />}
+      </button>
     </div>
   );
 }
@@ -16,6 +42,7 @@ function DomainItem({ domain }) {
 export default function App() {
   const [domains, setDomains] = useState([]);
   const [newDomain, setNewDomain] = useState('');
+  const storageKey = 'dashboardDomains';
 
   const fetchStatus = async (name) => {
     try {
@@ -34,14 +61,32 @@ export default function App() {
     e.preventDefault();
     if (!newDomain) return;
     const domain = await fetchStatus(newDomain);
-    setDomains((prev) => [...prev, domain]);
+    setDomains((prev) => {
+      const updated = [...prev, domain];
+      localStorage.setItem(storageKey, JSON.stringify(updated.map((d) => d.name)));
+      return updated;
+    });
     setNewDomain('');
+  };
+
+  const updateDomain = async (oldName, newName) => {
+    const updatedDomain = await fetchStatus(newName);
+    setDomains((prev) => {
+      const updated = prev.map((d) => (d.name === oldName ? updatedDomain : d));
+      localStorage.setItem(storageKey, JSON.stringify(updated.map((d) => d.name)));
+      return updated;
+    });
   };
 
   useEffect(() => {
     (async () => {
-      const initial = await fetchStatus('example.com');
-      setDomains([initial]);
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      const names = saved.length ? saved : ['example.com'];
+      const list = [];
+      for (const name of names) {
+        list.push(await fetchStatus(name));
+      }
+      setDomains(list);
     })();
   }, []);
 
@@ -65,7 +110,7 @@ export default function App() {
       </form>
       <div className="space-y-2">
         {domains.map((d, i) => (
-          <DomainItem key={i} domain={d} />
+          <DomainItem key={i} domain={d} onUpdate={updateDomain} />
         ))}
       </div>
       <footer className="mt-8 text-center text-sm text-gray-500">

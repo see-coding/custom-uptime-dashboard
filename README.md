@@ -9,11 +9,24 @@ Ein selbst entwickeltes Fullstack-Dashboard zur Überwachung von Webseitenverfü
 
 ## 🚀 Schnellstart
 
+
+### Abhängigkeiten installieren
+
+```bash
+./setup.sh
+```
+
+Oder einzeln in den Ordnern:
+
+```bash
+cd client && ./install.sh
+cd server && ./install.sh
+```
 ### 1. Frontend starten
 
 ```bash
 cd client
-npm install
+./install.sh   # einmalig
 npm run dev
 ```
 
@@ -21,7 +34,7 @@ npm run dev
 
 ```bash
 cd server
-npm install
+./install.sh   # einmalig
 npm start
 ```
 
@@ -38,6 +51,7 @@ custom-uptime-dashboard/
 - Zeigt Online-/Offline-Status für beliebige Domains
 - Zeigt Ablaufdatum und Resttage des SSL-Zertifikats
 - Hinzufügen neuer Domains per Eingabe
+- Bestehende Domains lassen sich bearbeiten und bleiben lokal gespeichert
 - Navigation & Footer vorhanden
 
 ## 🧠 Hinweis für Codex
