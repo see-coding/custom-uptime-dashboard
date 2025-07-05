@@ -18,3 +18,7 @@ yarn-error.log*
 # Editor
 .vscode
 .idea
+
+# Custom-Changes
+/server/package-lock.json
+/client/package-lock.json
