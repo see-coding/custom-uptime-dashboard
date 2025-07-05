@@ -1,0 +1,20 @@
+# Node modules
+**/node_modules
+
+# Vite / React
+dist
+*.env
+.vite
+
+# Systemdateien
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode
+.idea
