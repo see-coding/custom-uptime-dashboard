@@ -63,6 +63,19 @@ export default function App() {
   const [domains, setDomains] = useState([]);
   const [newDomain, setNewDomain] = useState('');
   const storageKey = 'dashboardDomains';
+  const apiBase = 'http://localhost:3001/api';
+
+  const saveDomains = async (names) => {
+    try {
+      await fetch(`${apiBase}/domains`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domains: names }),
+      });
+    } catch (err) {
+      console.error('Speichern fehlgeschlagen', err);
+    }
+  };
 
   const fetchStatus = async (name) => {
     try {
@@ -86,7 +99,9 @@ export default function App() {
     const domain = await fetchStatus(newDomain);
     setDomains((prev) => {
       const updated = [...prev, domain];
-      localStorage.setItem(storageKey, JSON.stringify(updated.map((d) => d.name)));
+      const names = updated.map((d) => d.name);
+      localStorage.setItem(storageKey, JSON.stringify(names));
+      saveDomains(names);
       return updated;
     });
     setNewDomain('');
@@ -96,20 +111,32 @@ export default function App() {
     const updatedDomain = await fetchStatus(newName);
     setDomains((prev) => {
       const updated = prev.map((d) => (d.name === oldName ? updatedDomain : d));
-      localStorage.setItem(storageKey, JSON.stringify(updated.map((d) => d.name)));
+      const names = updated.map((d) => d.name);
+      localStorage.setItem(storageKey, JSON.stringify(names));
+      saveDomains(names);
       return updated;
     });
   };
 
   useEffect(() => {
     (async () => {
-      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      const names = saved.length ? saved : ['example.com'];
-      const list = [];
-      for (const name of names) {
-        list.push(await fetchStatus(name));
+      try {
+        const res = await fetch(`${apiBase}/domains`);
+        const names = await res.json();
+        const list = [];
+        for (const name of names.length ? names : ['example.com']) {
+          list.push(await fetchStatus(name));
+        }
+        setDomains(list);
+      } catch {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const names = saved.length ? saved : ['example.com'];
+        const list = [];
+        for (const name of names) {
+          list.push(await fetchStatus(name));
+        }
+        setDomains(list);
       }
-      setDomains(list);
     })();
   }, []);
 
