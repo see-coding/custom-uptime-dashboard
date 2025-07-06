@@ -33,7 +33,19 @@ function DomainItem({ domain, onUpdate }) {
               />
               <span className="ml-1">{domain.status}</span>
             </p>
-            <p className="text-sm text-gray-600">SSL bis: {domain.ssl} ({domain.daysLeft} Tage)</p>
+            <p
+              className={`text-sm ${
+                domain.ssl && domain.ssl !== 'unbekannt'
+                  ? domain.daysLeft < 0
+                    ? 'font-bold text-[#ff0000]'
+                    : domain.daysLeft <= 7
+                    ? 'italic text-[#ff6600]'
+                    : 'text-[#a6a6a6]'
+                  : 'text-gray-600'
+              }`}
+            >
+              SSL bis: {domain.ssl} ({domain.daysLeft} Tage)
+            </p>
           </>
         )}
       </div>
@@ -58,9 +70,10 @@ export default function App() {
         `http://localhost:3001/api/status?domain=${encodeURIComponent(name)}`
       );
       const data = await res.json();
-      const daysLeft = data.ssl
-        ? Math.ceil((new Date(data.ssl) - new Date()) / (1000 * 60 * 60 * 24))
-        : 0;
+      const sslDate = new Date(data.ssl);
+      const daysLeft = isNaN(sslDate)
+        ? 0
+        : Math.ceil((sslDate - new Date()) / (1000 * 60 * 60 * 24));
       return { name, status: data.status, ssl: data.ssl, daysLeft };
     } catch (err) {
       return { name, status: 'error', ssl: 'unbekannt', daysLeft: 0 };
