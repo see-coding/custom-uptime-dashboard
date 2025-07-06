@@ -51,7 +51,7 @@ custom-uptime-dashboard/
 - Zeigt Online-/Offline-Status für beliebige Domains
 - Zeigt Ablaufdatum und Resttage des SSL-Zertifikats
 - Hinzufügen neuer Domains per Eingabe
-- Bestehende Domains lassen sich bearbeiten und bleiben lokal gespeichert
+- Bestehende Domains lassen sich bearbeiten und werden serverseitig in `server/data/domains.json` gespeichert
 - Navigation & Footer vorhanden
 
 ## 🧠 Hinweis für Codex

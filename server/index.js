@@ -2,11 +2,53 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const tls = require('tls');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = 3001;
 
+const dataDir = path.join(__dirname, 'data');
+const domainsFile = path.join(dataDir, 'domains.json');
+
+const ensureDataFile = () => {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir);
+  }
+  if (!fs.existsSync(domainsFile)) {
+    fs.writeFileSync(domainsFile, JSON.stringify(['example.com'], null, 2));
+  }
+};
+
+const readDomains = () => {
+  try {
+    const raw = fs.readFileSync(domainsFile, 'utf8');
+    return JSON.parse(raw);
+  } catch (err) {
+    return ['example.com'];
+  }
+};
+
+const writeDomains = (domains) => {
+  fs.writeFileSync(domainsFile, JSON.stringify(domains, null, 2));
+};
+
+ensureDataFile();
+
 app.use(cors());
+app.use(express.json());
+
+app.get('/api/domains', (req, res) => {
+  res.json(readDomains());
+});
+
+app.post('/api/domains', (req, res) => {
+  if (!Array.isArray(req.body.domains)) {
+    return res.status(400).json({ error: 'domains array required' });
+  }
+  writeDomains(req.body.domains);
+  res.json({ success: true });
+});
 
 app.get('/api/status', async (req, res) => {
   const { domain } = req.query;
