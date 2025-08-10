@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Cloud, Plus, Pencil, Save } from 'lucide-react';
+import { Cloud, Plus, Pencil, Save, Trash } from 'lucide-react';
 
-function DomainItem({ domain, onUpdate }) {
+function DomainItem({
+  domain,
+  onUpdate,
+  onDelete,
+  onDragStart,
+  onDragOver,
+  onDrop,
+}) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(domain.name);
 
@@ -13,7 +20,13 @@ function DomainItem({ domain, onUpdate }) {
   };
 
   return (
-    <div className="border rounded p-4 bg-white shadow-sm flex items-center justify-between">
+    <div
+      className="border rounded p-4 bg-white shadow-sm flex items-center justify-between"
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       <div className="flex-1">
         {editing ? (
           <input
@@ -49,12 +62,17 @@ function DomainItem({ domain, onUpdate }) {
           </>
         )}
       </div>
-      <button
-        className="ml-2 text-blue-500"
-        onClick={editing ? save : () => setEditing(true)}
-      >
-        {editing ? <Save size={16} /> : <Pencil size={16} />}
-      </button>
+      <div className="flex items-center space-x-2 ml-2">
+        <button
+          className="text-blue-500"
+          onClick={editing ? save : () => setEditing(true)}
+        >
+          {editing ? <Save size={16} /> : <Pencil size={16} />}
+        </button>
+        <button className="text-red-500" onClick={() => onDelete(domain.name)}>
+          <Trash size={16} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -62,6 +80,7 @@ function DomainItem({ domain, onUpdate }) {
 export default function App() {
   const [domains, setDomains] = useState([]);
   const [newDomain, setNewDomain] = useState('');
+  const [draggedIndex, setDraggedIndex] = useState(null);
   const storageKey = 'dashboardDomains';
   const apiBase = 'http://localhost:3001/api';
 
@@ -118,6 +137,30 @@ export default function App() {
     });
   };
 
+  const deleteDomain = async (name) => {
+    setDomains((prev) => {
+      const updated = prev.filter((d) => d.name !== name);
+      const names = updated.map((d) => d.name);
+      localStorage.setItem(storageKey, JSON.stringify(names));
+      saveDomains(names);
+      return updated;
+    });
+  };
+
+  const handleDrop = (index) => {
+    if (draggedIndex === null || draggedIndex === index) return;
+    setDomains((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(draggedIndex, 1);
+      updated.splice(index, 0, moved);
+      const names = updated.map((d) => d.name);
+      localStorage.setItem(storageKey, JSON.stringify(names));
+      saveDomains(names);
+      return updated;
+    });
+    setDraggedIndex(null);
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -160,7 +203,15 @@ export default function App() {
       </form>
       <div className="space-y-2">
         {domains.map((d, i) => (
-          <DomainItem key={i} domain={d} onUpdate={updateDomain} />
+          <DomainItem
+            key={d.name}
+            domain={d}
+            onUpdate={updateDomain}
+            onDelete={deleteDomain}
+            onDragStart={() => setDraggedIndex(i)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop(i)}
+          />
         ))}
       </div>
       <footer className="mt-8 text-center text-sm text-gray-500">
