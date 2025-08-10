@@ -84,58 +84,80 @@ export default function App() {
   const storageKey = 'dashboardDomains';
   const apiBase = 'http://localhost:3001/api';
 
-  const saveDomains = async (names) => {
-    try {
-      await fetch(`${apiBase}/domains`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domains: names }),
-      });
-    } catch (err) {
-      console.error('Speichern fehlgeschlagen', err);
-    }
-  };
+import React, { useState, useRef } from 'react';
+import Topbar from './components/Topbar';
+import AppBar from './components/AppBar';
+import WindowManager from './components/WindowManager';
+import Footer from './components/Footer';
+import MenuOverlay from './components/MenuOverlay';
+import PlaceholderApp from './apps/PlaceholderApp';
+import UptimeApp from './apps/UptimeApp';
+import {
+  FileText,
+  Building2,
+  DollarSign,
+  Cloud,
+  Music2,
+  StickyNote,
+  CheckSquare,
+  BarChart3,
+  Settings,
+} from 'lucide-react';
 
-  const fetchStatus = async (name) => {
-    try {
-      const res = await fetch(
-        `http://localhost:3001/api/status?domain=${encodeURIComponent(name)}`
-      );
-      const data = await res.json();
-      const sslDate = new Date(data.ssl);
-      const daysLeft = isNaN(sslDate)
-        ? 0
-        : Math.ceil((sslDate - new Date()) / (1000 * 60 * 60 * 24));
-      return { name, status: data.status, ssl: data.ssl, daysLeft };
-    } catch (err) {
-      return { name, status: 'error', ssl: 'unbekannt', daysLeft: 0 };
-    }
-  };
+const appRegistry = {
+  invoice: { title: 'Rechnung', icon: FileText, component: () => <PlaceholderApp title="Rechnung" /> },
+  company: { title: 'Firma', icon: Building2, component: () => <PlaceholderApp title="Firma" /> },
+  finance: { title: 'Finanzstatus', icon: DollarSign, component: () => <PlaceholderApp title="Finanzstatus" /> },
+  uptime: { title: 'Uptime', icon: Cloud, component: UptimeApp },
+  nippel: { title: 'Nippelboard', icon: Music2, component: () => <PlaceholderApp title="Nippelboard" /> },
+  otn: { title: 'OTN', icon: StickyNote, component: () => <PlaceholderApp title="One-Time-Note" /> },
+  todo: { title: 'ToDo', icon: CheckSquare, component: () => <PlaceholderApp title="ToDo" /> },
+  fsapp: { title: 'FSapp', icon: BarChart3, component: () => <PlaceholderApp title="FSapp" /> },
+  settings: { title: 'AppSettings', icon: Settings, component: () => <PlaceholderApp title="Einstellungen" /> },
+};
 
-  const addDomain = async (e) => {
-    e.preventDefault();
-    if (!newDomain) return;
-    const domain = await fetchStatus(newDomain);
-    setDomains((prev) => {
-      const updated = [...prev, domain];
-      const names = updated.map((d) => d.name);
-      localStorage.setItem(storageKey, JSON.stringify(names));
-      saveDomains(names);
-      return updated;
+export default function App() {
+  const [windows, setWindows] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const zRef = useRef(1);
+
+
+  const openApp = (key) => {
+    const app = appRegistry[key];
+    if (!app) return;
+    setWindows((prev) => {
+      const existing = prev.find((w) => w.key === key);
+      if (existing) {
+        return prev.map((w) =>
+          w.key === key ? { ...w, minimized: false } : w
+        );
+      }
+      const id = Date.now();
+      const z = zRef.current++;
+      return [
+        ...prev,
+        {
+          id,
+          key,
+          title: app.title,
+          component: app.component,
+          position: { x: 100, y: 80 },
+          zIndex: z,
+          minimized: false,
+          maximized: false,
+        },
+      ];
     });
-    setNewDomain('');
   };
 
-  const updateDomain = async (oldName, newName) => {
-    const updatedDomain = await fetchStatus(newName);
-    setDomains((prev) => {
-      const updated = prev.map((d) => (d.name === oldName ? updatedDomain : d));
-      const names = updated.map((d) => d.name);
-      localStorage.setItem(storageKey, JSON.stringify(names));
-      saveDomains(names);
-      return updated;
-    });
+  const selectFromFooter = (id) => {
+    setWindows((prev) =>
+      prev.map((w) =>
+        w.id === id ? { ...w, minimized: false, zIndex: zRef.current++ } : w
+      )
+    );
   };
+
 
   const deleteDomain = async (name) => {
     setDomains((prev) => {
@@ -213,10 +235,17 @@ export default function App() {
             onDrop={() => handleDrop(i)}
           />
         ))}
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-100">
+      <Topbar onMenu={() => setMenuOpen(true)} />
+      <MenuOverlay open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <AppBar apps={appRegistry} onOpen={openApp} />
+      <div className="flex-1 relative ">
+        <WindowManager windows={windows} setWindows={setWindows} zRef={zRef} />
+
       </div>
-      <footer className="mt-8 text-center text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} Uptime Dashboard
-      </footer>
+      <Footer windows={windows} onSelect={selectFromFooter} />
     </div>
   );
 }
