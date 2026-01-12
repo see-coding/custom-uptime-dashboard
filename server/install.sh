@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-npm install
+npm install --no-audit --no-fund

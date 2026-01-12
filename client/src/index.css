@@ -1,3 +1,23 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg-start: #f8f4ee;
+  --bg-end: #e9eef6;
+  --ink: #141414;
+}
+
+body {
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  background: radial-gradient(
+      1200px 600px at 20% -10%,
+      rgba(249, 115, 22, 0.18),
+      transparent 70%
+    ),
+    linear-gradient(140deg, var(--bg-start), var(--bg-end));
+  color: var(--ink);
+  min-height: 100vh;
+  margin: 0;
+}

@@ -22,3 +22,6 @@ yarn-error.log*
 # Custom-Changes
 /server/package-lock.json
 /client/package-lock.json
+
+# Storage
+/server/data
